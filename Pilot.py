@@ -7,14 +7,27 @@ def convert_pdf_to_images(input_file, output_dir, dpi):
     try:
         pdf_to_image_script = "Convert.py"
         subprocess.check_call(['python', pdf_to_image_script, input_file, '--output_dir', output_dir, '--dpi', str(dpi)])
+        
+        # Nome do arquivo original sem a extensão
+        original_filename = os.path.splitext(os.path.basename(input_file))[0]
+        
         # Listar os arquivos JPEG e ordená-los pelo nome
         files = sorted([f for f in os.listdir(output_dir) if f.lower().endswith(".jpeg")], key=lambda x: int(x.split('_')[1].split('.')[0]) if x.split('_')[1].split('.')[0].isdigit() else float('inf'))
-        for file_name in files:
-            image_path = os.path.join(output_dir, file_name)
-            images.append(image_path)
+        
+        for i, file_name in enumerate(files):
+            # Renomear os arquivos com o nome original do PDF e manter a extensão .pdf
+            if file_name == f"page_{i + 1}.jpeg":
+                new_filename = f"{original_filename}_{i + 1}.jpeg"
+                new_filepath = os.path.join(output_dir, new_filename)
+                old_filepath = os.path.join(output_dir, file_name)
+                os.rename(old_filepath, new_filepath)
+                images.append(new_filepath)
+
+        print("Arquivos renomeados com sucesso!")
     except subprocess.CalledProcessError as e:
         print(f"Erro ao converter PDF para imagens: {e}")
     return images
+    
 
 def process_images_with_textract(images, access_key, secret_key, output_dir, dpi):
     textract_script = "Textract.py"
